@@ -1,43 +1,41 @@
-let global : any = typeof window !== 'undefined' ? window : self;
+let global: any = typeof window !== 'undefined' ? window : self;
 global.config = {
-	apiUrl:typeof window !== 'undefined' && window.location ? window.location.href.substr(0,window.location.href.lastIndexOf('/')+1)+'api/' : 'https://www.masariwallet.com/api/',
-	trustedDaemonsAddresses:[
-		'https://www.masariwallet.com:38084/'
-	],
-	phpRelay:typeof window !== 'undefined' ? true : false,
-	mainnetExplorerUrl: "https://msrchain.net/",
-	mainnetExplorerUrlHash: "https://msrchain.net/tx/{ID}",
-	mainnetExplorerUrlBlock: "https://msrchain.net/block/{ID}",
-	testnetExplorerUrl: "http://testnet.msrchain.net/",
-	testnetExplorerUrlHash: "http://testnet.msrchain.net/tx/{ID}",
-	testnetExplorerUrlBlock: "http://testnet.msrchain.net/block/{ID}",
-	testnet: false,
-	coinUnitPlaces: 12,
-	txMinConfirms: 10,         // corresponds to CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE in Monero
-	txCoinbaseMinConfirms: 60, // corresponds to CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW in Monero
-	addressPrefix: 28,
-	integratedAddressPrefix: 29,
-	addressPrefixTestnet: 33,
-	integratedAddressPrefixTestnet: 34,
-	subAddressPrefix: 52,
-	subAddressPrefixTestnet: 73,
-	feePerKB: new JSBigInt('400000000'),//20^10 - for testnet its not used, as fee is dynamic.
-	dustThreshold: new JSBigInt('1000000000'),//10^10 used for choosing outputs/change - we decompose all the way down if the receiver wants now regardless of threshold
-	defaultMixin: 12, // default value mixin
+    apiUrl: typeof window !== 'undefined' && window.location ? window.location.href.substr(0, window.location.href.lastIndexOf('/') + 1) + 'api/' : 'https://public.kryptonchain.org/node-api/',
+    trustedDaemonsAddresses: [
+        'http://public.kryptonchain.org:12888/'
+    ],
+    phpRelay: typeof window !== 'undefined' ? true : false,
+    mainnetExplorerUrl: "https://explorer.kryptonchain.org",
+    mainnetExplorerUrlHash: "https://explorer.kryptonchain.org/tx/{ID}",
+    mainnetExplorerUrlBlock: "https://explorer.kryptonchain.org/block/{ID}",
+    testnetExplorerUrl: "https://testnet.kryptonchain.org",
+    testnetExplorerUrlHash: "https://testnet.kryptonchain.org/tx/{ID}",
+    testnetExplorerUrlBlock: "https://testnet.kryptonchain.org/block/{ID}",
+    testnet: false,
+    coinUnitPlaces: 6,
+    txMinConfirms: 20,         // corresponds to CRYPTONOTE_DEFAULT_TX_SPENDABLE_AGE in Monero
+    txCoinbaseMinConfirms: 20, // corresponds to CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW in Monero
+    addressPrefix: 0x1cf58b,
+    integratedAddressPrefix: 0,
+    addressPrefixTestnet: 0,
+    integratedAddressPrefixTestnet: 0,
+    subAddressPrefix: 0,
+    subAddressPrefixTestnet: 0,
+    feePerKB: new JSBigInt('100'),
+    dustThreshold: new JSBigInt('1'),
+    defaultMixin: 0, // default mixin value
 
-	idleTimeout: 30,
-	idleWarningDuration: 20,
+    idleTimeout: 30,
+    idleWarningDuration: 20,
 
-	coinSymbol: 'MSR',
-	openAliasPrefix: "msr",
-	coinName: 'Masari',
-	coinUriPrefix: 'masari:',
-	avgBlockTime: 60,
-	maxBlockNumber: 500000000,
+    coinSymbol: 'ZOD',
+    openAliasPrefix: "zod",
+    coinName: 'Krypton',
+    coinUriPrefix: 'krypton:',
+    avgBlockTime: 60,
+    maxBlockNumber: 500000000,
 
-	donationAddresses : [
-		'5qfrSvgYutM1aarmQ1px4aDiY9Da7CLKKDo3UkPuUnQ7bT7tr7i4spuLaiZwXG1dFQbkCinRUNeUNLoNh342sVaqTaWqvt8',
-		'5nYWvcvNThsLaMmrsfpRLBRou1RuGtLabUwYH7v6b88bem2J4aUwsoF33FbJuqMDgQjpDRTSpLCZu3dXpqXicE2uSWS4LUP',
-		'9ppu34ocgmeZiv4nS2FyQTFLL5wBFQZkhAfph7wGcnFkc8fkCgTJqxnXuBkaw1v2BrUW7iMwKoQy2HXRXzDkRE76Cz7WXkD'
-	]
+    donationAddresses: [
+        'QQQ1ULhovJFX6Mau76zUZqXXpcheeaq1hXUdNTjMEBBNQNcH91oSotZNS7jGC9eTZ1QeDctbppKxJ28mtSWLNJiV7DecXMoJu2',
+    ]
 };

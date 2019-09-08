@@ -13,48 +13,48 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import {DestructableView} from "../lib/numbersLab/DestructableView";
-import {VueVar} from "../lib/numbersLab/VueAnnotate";
-import {AppState} from "../model/AppState";
-import {BlockchainExplorer, NetworkInfo} from "../model/blockchain/BlockchainExplorer";
-import {BlockchainExplorerProvider} from "../providers/BlockchainExplorerProvider";
+import { DestructableView } from "../lib/numbersLab/DestructableView";
+import { VueVar } from "../lib/numbersLab/VueAnnotate";
+import { AppState } from "../model/AppState";
+import { BlockchainExplorer, NetworkInfo } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
 
 AppState.enableLeftMenu();
 let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
-class NetworkView extends DestructableView{
-	@VueVar(0) networkHashrate !: number;
-	@VueVar(0) blockchainHeight !: number;
-	@VueVar(0) networkDifficulty !: number;
-	@VueVar(0) lastReward !: number;
-	@VueVar(0) lastBlockFound !: number;
+class NetworkView extends DestructableView {
+    @VueVar(0) networkHashrate !: number;
+    @VueVar(0) blockchainHeight !: number;
+    @VueVar(0) networkDifficulty !: number;
+    @VueVar(0) lastReward !: number;
+    @VueVar(0) lastBlockFound !: number;
 
-	private intervalRefreshStat = 0;
+    private intervalRefreshStat = 0;
 
-	constructor(container : string){
-		super(container);
+    constructor(container: string) {
+        super(container);
 
-		let self = this;
-		this.intervalRefreshStat = setInterval(function(){
-			self.refreshStats();
-		}, 30*1000);
-		this.refreshStats();
-	}
+        let self = this;
+        this.intervalRefreshStat = setInterval(function () {
+            self.refreshStats();
+        }, 30 * 1000);
+        this.refreshStats();
+    }
 
-	destruct(): Promise<void> {
-		clearInterval(this.intervalRefreshStat);
-		return super.destruct();
-	}
+    destruct(): Promise<void> {
+        clearInterval(this.intervalRefreshStat);
+        return super.destruct();
+    }
 
-	refreshStats() {
-		blockchainExplorer.getNetworkInfo().then((info : NetworkInfo)=>{
-			this.networkDifficulty = info.difficulty;
-			this.networkHashrate = info.difficulty/config.avgBlockTime/1000000;
-			this.blockchainHeight = info.height;
-			this.lastReward = info.reward/Math.pow(10, config.coinUnitPlaces);
-			this.lastBlockFound = info.timestamp;
-		});
-	}
+    refreshStats() {
+        blockchainExplorer.getNetworkInfo().then((info: NetworkInfo) => {
+            this.networkDifficulty = info.difficulty;
+            this.networkHashrate = info.difficulty / config.avgBlockTime / 1000000;
+            this.blockchainHeight = info.height;
+            this.lastReward = info.reward / Math.pow(10, config.coinUnitPlaces);
+            this.lastBlockFound = info.timestamp;
+        });
+    }
 
 }
 
