@@ -178,13 +178,13 @@ export class BlockchainExplorerRpc2 implements BlockchainExplorer {
                         if (typeof tx.global_index_start !== 'undefined')
                             globalIndex += tx.global_index_start;
 
-                        if (parseInt(tx.vout[output_idx_in_tx].amount) !== 0) {//check if miner tx
-                            rct = CnTransactions.zeroCommit(CnUtils.d2s(tx.vout[output_idx_in_tx].amount));
+                        if (tx.vout[output_idx_in_tx].output.amount !== 0) { // check if miner tx
+                            rct = CnTransactions.zeroCommit(CnUtils.d2s(tx.vout[output_idx_in_tx].output.amount));
                         } else {
-                            let rtcOutPk = tx.rct_signatures.outPk[output_idx_in_tx];
-                            let rtcMask = tx.rct_signatures.ecdhInfo[output_idx_in_tx].mask;
-                            let rtcAmount = tx.rct_signatures.ecdhInfo[output_idx_in_tx].amount;
-                            rct = rtcOutPk + rtcMask + rtcAmount;
+                            //let rtcOutPk = tx.rct_signatures.outPk[output_idx_in_tx];
+                            //let rtcMask = tx.rct_signatures.ecdhInfo[output_idx_in_tx].mask;
+                            //let rtcAmount = tx.rct_signatures.ecdhInfo[output_idx_in_tx].amount;
+                            //rct = rtcOutPk + rtcMask + rtcAmount;
                         }
 
 						/*let checkExit = false;
@@ -200,7 +200,7 @@ export class BlockchainExplorerRpc2 implements BlockchainExplorer {
 						if (!checkExit) {*/
                         let newOut = {
                             rct: rct,
-                            public_key: tx.vout[output_idx_in_tx].target.key,
+                            public_key: tx.vout[output_idx_in_tx].output.target.data.key,
                             global_index: globalIndex,
                             // global_index: count,
                         };

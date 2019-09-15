@@ -13,7 +13,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { BlockchainExplorer, NetworkInfo, RawDaemon_Transaction } from "./BlockchainExplorer";
+import { BlockchainExplorer, NetworkInfo, RawDaemon_Transaction, Outputs, Inputs, Extra } from "./BlockchainExplorer";
 import { Wallet } from "../Wallet";
 import { MathUtil } from "../MathUtil";
 import { CnTransactions, CnUtils } from "../Cn";
@@ -61,9 +61,10 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
                     jsonrpc: '2.0',
                     method: method,
                     params: params,
-                    id: 0
+                    id: 'webwallet'
                 }),
-                contentType: 'application/json'
+                //contentType: 'application/json',
+                dataType: 'json'
             }).done(function (raw: any) {
                 if (
                     typeof raw.id === 'undefined' ||
@@ -140,49 +141,76 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
 
     getTransactionsForBlocks(startBlock: number, endBlock: number, includeMinerTxs = true): Promise<RawDaemon_Transaction[]> {
         let heights = this.range(startBlock, endBlock);
-        return this.makeRequest('POST', 'gettransactions_by_heights', { heights: heights, prune: true, decode_as_json: true, include_miner_txs: includeMinerTxs }).then((answer: {
+        let formatted: RawDaemon_Transaction[] = [];
+        this.makeRpcRequest('f_blocks_list_json', { height: endBlock }).then((answer: {
             status: 'OK' | 'string',
-            txs: { as_hew: string, as_json: string, block_height: number, block_timestamp: number, output_indices: number[], tx_hash: string }[]
+            blocks: { hash: string }[]
         }) => {
-            let formatted: RawDaemon_Transaction[] = [];
-
+            //console.log(answer);
             if (answer.status !== 'OK') throw 'invalid_transaction_answer';
+            for (let block of answer.blocks.reverse()) {
+                //console.log(block);
+                this.makeRpcRequest('f_block_json', { hash: block.hash }).then((blockTransactions: {
+                    status: 'OK' | 'string',
+                    block: { transactions: any }
+                }) => {
+                    let blockInfo = blockTransactions.block;
+                    console.log(blockInfo);
+                    for (let transaction of blockInfo.transactions) {
+                        //console.log(transaction);
+                        this.makeRpcRequest('f_transaction_json', { hash: transaction.hash }).then((transactionDetail: {
+                            status: 'OK' | 'string',
+                            tx: {
+                                extra: Extra,
+                                vout: Outputs[],
+                                vin: Inputs[],
+                                fee: number,
+                                unlock_time: number,
+                                height?: number,
+                                timestamp?: number
+                                hash?: string,
+                                paymentId: string
+                            },
+                            txDetails: { paymentId: string, fee: number, hash: string },
+                            block: { height: number, timestamp: number }
+                        }) => {
+                            //console.log(transactionDetail);
+                            let rawTx: RawDaemon_Transaction = {
+                                extra: transactionDetail.tx.extra,
+                                vout: transactionDetail.tx.vout,
+                                vin: transactionDetail.tx.vin,
+                                fee: transactionDetail.txDetails.fee,
+                                global_index_start: transactionDetail.block.height,
+                                unlock_time: transactionDetail.tx.unlock_time,
+                                height: transactionDetail.block.height,
+                                timestamp: transactionDetail.block.timestamp,
+                                hash: transactionDetail.txDetails.hash,
+                                paymentId: transactionDetail.txDetails.paymentId
+                            };
+                            formatted.push(rawTx);
+                        });
+                    }
 
-            for (let rawTx of answer.txs) {
-                let tx: RawDaemon_Transaction | null = null;
-                try {
-                    tx = JSON.parse(rawTx.as_json);
-                } catch (e) {
-                    try {
-                        //compat for some invalid endpoints
-                        tx = JSON.parse('{"t":1' + rawTx.as_json + '}');
-                    } catch (e) { }
-                }
-                if (tx !== null) {
-                    tx.ts = rawTx.block_timestamp;
-                    tx.height = rawTx.block_height;
-                    tx.hash = rawTx.tx_hash;
-                    if (rawTx.output_indices.length > 0)
-                        tx.global_index_start = rawTx.output_indices[0];
-
-                    formatted.push(tx);
-                }
+                });
             }
-
-            return formatted;
+        });
+        return new Promise<any>((resolve, reject) => {
+            resolve(formatted);
         });
     }
 
     getTransactionPool(): Promise<RawDaemon_Transaction[]> {
-        return this.makeRequest('GET', 'get_transaction_pool').then((rawTransactions: { tx_blob: string, tx_json: string }[]) => {
+        return this.makeRpcRequest('f_on_transactions_pool_json').then((transactions: { fee: number, hash: string }[]) => {
+            //console.log(transactions);
             let formatted: RawDaemon_Transaction[] = [];
-            for (let rawTransaction of rawTransactions) {
+            //console.log(formatted);
+            /*for (let rawTransaction of transactions) {
                 try {
                     formatted.push(JSON.parse(rawTransaction.tx_json));
                 } catch (e) {
                     console.error(e);
                 }
-            }
+            }*/
             return formatted;
         });
     }
@@ -246,21 +274,23 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
                     for (let output_idx_in_tx = 0; output_idx_in_tx < tx.vout.length; ++output_idx_in_tx) {
                         let rct = null;
                         let globalIndex = output_idx_in_tx;
+                        console.log(output_idx_in_tx); console.log('ee');
+
                         if (typeof tx.global_index_start !== 'undefined')
                             globalIndex += tx.global_index_start;
 
-                        if (parseInt(tx.vout[output_idx_in_tx].amount) !== 0) {//check if miner tx
-                            rct = CnTransactions.zeroCommit(CnUtils.d2s(tx.vout[output_idx_in_tx].amount));
+                        if (tx.vout[output_idx_in_tx].output.amount !== 0) { // check if miner tx
+                            rct = CnTransactions.zeroCommit(CnUtils.d2s(tx.vout[output_idx_in_tx].output.amount));
                         } else {
-                            let rtcOutPk = tx.rct_signatures.outPk[output_idx_in_tx];
-                            let rtcMask = tx.rct_signatures.ecdhInfo[output_idx_in_tx].mask;
-                            let rtcAmount = tx.rct_signatures.ecdhInfo[output_idx_in_tx].amount;
-                            rct = rtcOutPk + rtcMask + rtcAmount;
+                            //let rtcOutPk = tx.rct_signatures.outPk[output_idx_in_tx];
+                            //let rtcMask = tx.rct_signatures.ecdhInfo[output_idx_in_tx].mask;
+                            //let rtcAmount = tx.rct_signatures.ecdhInfo[output_idx_in_tx].amount;
+                            //rct = rtcOutPk + rtcMask + rtcAmount;
                         }
 
                         let newOut = {
                             rct: rct,
-                            public_key: tx.vout[output_idx_in_tx].target.key,
+                            public_key: tx.vout[output_idx_in_tx].output.target.data.key,
                             global_index: globalIndex,
                             // global_index: count,
                         };
